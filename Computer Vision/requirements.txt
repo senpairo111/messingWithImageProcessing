@@ -1,0 +1,3 @@
+gbvision
+opencv-python
+numpy
