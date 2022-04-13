@@ -1,16 +1,16 @@
 import cv2
 import numpy as np
-
 import gbvision as gbv
 
 stdv = np.array([5, 40, 40])
 
 
 def main():
-    camera = gbv.USBCamera(0)
-    camera.set_exposure(-7)
+    camera = gbv.USBCamera(1)
+    camera.set_exposure(12)
     window = gbv.CameraWindow('feed', camera)
     window.open()
+    
     while True:
         frame = window.show_and_get_frame()
         k = window.last_key_pressed
