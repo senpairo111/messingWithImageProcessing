@@ -1,13 +1,13 @@
 import cv2
 import numpy as np
 import gbvision as gbv
-
-stdv = np.array([5, 40, 40])
+import settings as settings
+stdv = np.array([5, 40, 65])
 
 
 def main():
-    camera = gbv.USBCamera(1)
-    camera.set_exposure(12)
+    camera = gbv.USBCamera(settings.CAMERA_PORT)
+    camera.set_exposure(settings.EXPOSURE)
     window = gbv.CameraWindow('feed', camera)
     window.open()
     
