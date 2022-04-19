@@ -1,12 +1,19 @@
+import struct
 import gbvision as gbv
 import numpy as np
 import settings as settings
-threshold = settings.MULTIPLE_DUCKS_THRESHOLD + gbv.MedianBlur(5) + gbv.Dilate(7, 7
-        ) + gbv.MedianBlur(9) + gbv.Erode(5, 7) + gbv.DistanceTransformThreshold(0.3)
+import socket
+
+
+threshold = settings.MULTIPLE_DUCKS_THRESHOLD + gbv.MedianBlur(3) + gbv.Dilate(12, 9
+        )  + gbv.Erode(5, 9) + gbv.DistanceTransformThreshold(0.3)
 
 pipe = threshold + gbv.find_contours + gbv.FilterContours(
     100) + gbv.contours_to_rotated_rects_sorted + gbv.filter_inner_rotated_rects
+
 TARGET = settings.MULTIPLE_DUCKS
+
+sock = socket.socket
 
 def main():
     cam = gbv.USBCamera(settings.CAMERA_PORT, gbv.LIFECAM_3000)
@@ -30,8 +37,13 @@ def main():
             print("distance:" + str(TARGET.distance_by_params(cam, root)))
             print("location:" + str(locals))
             print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
-            #with open("D:/visionTest/angle.txt", "w") as file:
-            #    file.write(str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
+            
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                #sock.sendto(locals.tobytes(),
+                sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
+                    ("255.255.255.255", 5162))
+                
 
 
 if __name__ == '__main__':

@@ -1,0 +1,6 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "c:\\Users\\nadav\\Downloads\\jar_files\\jbbp-2.0.3.jar"
+    ]
+}

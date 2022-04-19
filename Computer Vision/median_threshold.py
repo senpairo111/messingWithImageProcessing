@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import gbvision as gbv
 import settings as settings
-stdv = np.array([5, 40, 65])
+stdv = np.array([5, 40, 60])
 
 
 def main():
