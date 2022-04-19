@@ -3,11 +3,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
-import com.igormaznitsa.jbbp.JBBPParser;
-import com.igormaznitsa.jbbp.model.JBBPFieldArrayUByte;
-import com.igormaznitsa.jbbp.model.JBBPFieldStruct;
 class Main{
     public static void main(String[] args) {
         try{
