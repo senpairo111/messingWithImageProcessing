@@ -16,10 +16,11 @@ def main():
         k = window.last_key_pressed
         if k == 'r':
             bbox = cv2.selectROI('feed', frame)
+            
             thr = gbv.median_threshold(frame, stdv, bbox, 'HSV')
             break
     cv2.destroyAllWindows()
-
+    print(bbox)
     print(thr)
 
     original = gbv.FeedWindow(window_name='original')

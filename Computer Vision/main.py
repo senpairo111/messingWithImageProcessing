@@ -16,7 +16,7 @@ TARGET = settings.MULTIPLE_DUCKS
 sock = socket.socket
 
 def main():
-    cam = gbv.USBCamera(settings.CAMERA_PORT, gbv.LIFECAM_3000)
+    cam = gbv.USBCamera(settings.CAMERA_PORT, gbv.LIFECAM_3000) 
     cam.set_exposure(settings.EXPOSURE)
     
     ok, frame = cam.read()
@@ -29,7 +29,6 @@ def main():
         raw.show_frame(settings.MULTIPLE_DUCKS_THRESHOLD(frame))
         cnts = pipe(frame)
         frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
-        
         if len(cnts) > 0:
             root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
             center = gbv.BaseRotatedRect.shape_center(cnts[0])
@@ -40,7 +39,6 @@ def main():
             
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-                #sock.sendto(locals.tobytes(),
                 sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
                     ("255.255.255.255", 5162))
                 
