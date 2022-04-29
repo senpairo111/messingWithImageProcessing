@@ -6,17 +6,18 @@ import numpy as np
 import settings as settings
 import socket
 
-default_vals = [25, 187, 180]
-default_range = [5, 60, 60]
+default_vals = [19, 231, 75]
+default_range = [5, 30, 30]
 
 TARGET = settings.MULTIPLE_DUCKS
-final_thr = settings.MULTIPLE_DUCKS_THRESHOLD
+final_thr = settings.SINGLE_DUCK_THRSESHOLD
 sock = socket.socket
 
 def main():
     cam = gbv.USBCamera(settings.CAMERA_PORT, gbv.LIFECAM_3000) 
     cam.set_exposure(settings.EXPOSURE)
-    last_exposure = settings.EXPOSURE
+    exposure = settings.EXPOSURE
+    last_exposure_e = 0
     exposure_integral = 0
     ok, frame = cam.read()
     win = gbv.FeedWindow("window")
@@ -33,6 +34,8 @@ def main():
         sat = default_vals[1] 
         val = default_vals[2] 
         
+        hue += (hue - cur_thr.__getitem__(0)[0]) * settings.HUE_KP
+        
         range_hue = default_range[0] 
         range_sat = default_range[1] 
         range_val = default_range[2] 
@@ -42,11 +45,15 @@ def main():
         # exposure PID
         exposure_error = (val - cur_thr.__getitem__(2)[0])
         exposure_integral += exposure_error
-        exposure_derivative = last_exposure - exposure_error
-        cam.set_exposure(-(exposure_error * settings.EXPOSURE_KP
-                           ) + (exposure_integral * settings.EXPOSURE_KI)
-                         - (exposure_derivative * settings.EXPOSURE_KD))
-        last_exposure = exposure_error
+        exposure_derivative = exposure_error - last_exposure_e
+        exposure += -(exposure_error * settings.EXPOSURE_KP
+                           ) - (exposure_integral * settings.EXPOSURE_KI
+                            ) + (exposure_derivative * settings.EXPOSURE_KD)
+        print(exposure)
+        print(exposure_error)
+        print(exposure_derivative)
+        cam.set_exposure(exposure)
+        last_exposure_e = exposure_error
         
         final_thr.__setitem__(0, [hue - range_hue, hue + range_hue])
         final_thr.__setitem__(1, [sat - range_sat, sat + range_sat])
@@ -59,9 +66,10 @@ def main():
         # pipe
         pipe = threshold + gbv.find_contours + gbv.FilterContours(
             100) + gbv.contours_to_rotated_rects_sorted + gbv.filter_inner_rotated_rects
+        
         ok, frame = cam.read()
-        #thr.show_frame(threshold(frame))
-        #raw.show_frame(final_thr(frame))
+        thr.show_frame(threshold(frame))
+        raw.show_frame(final_thr(frame))
         cnts = pipe(frame)
         frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
         if len(cnts) > 0:
@@ -72,6 +80,9 @@ def main():
             print("location:" + str(locals))
             print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
             
+                
+            bbox = cv2.boundingRect(threshold(frame))
+            print(bbox)
             # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
             #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             #     sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
