@@ -16,7 +16,7 @@ sock = socket.socket
 def main():
     cam = gbv.USBCamera(settings.CAMERA_PORT, gbv.LIFECAM_3000) 
     cam.set_exposure(settings.EXPOSURE)
-    
+    exposure_integral = 0
     ok, frame = cam.read()
     win = gbv.FeedWindow("window")
     thr = gbv.FeedWindow("threshold")
@@ -24,15 +24,18 @@ def main():
     while win.show_frame(frame):
         # where we adapt
         cur_thr = gbv.median_threshold(frame, [0, 0, 0], None, 'HSV')
-        hue = default_vals[0] - ((default_vals[0] - cur_thr.__getitem__(0)[0]) * settings.HUE_KP)
-        sat = default_vals[1] - ((default_vals[1] - cur_thr.__getitem__(1)[0]) * settings.SAT_KP)
-        val = default_vals[2] + ((default_vals[2] - cur_thr.__getitem__(2)[0]) * settings.VAL_KP)
+        hue = default_vals[0] 
+        sat = default_vals[1] 
+        val = default_vals[2] 
         
-        range_hue = default_range[0] + (hue - cur_thr.__getitem__(0)[0]) * settings.RANGE_HUE_KP
-        range_sat = default_range[1] - (sat - cur_thr.__getitem__(1)[0]) * settings.RANGE_SAT_KP
-        range_val = default_range[2] + (val - cur_thr.__getitem__(2)[0]) * settings.RANGE_VAL_KP
+        range_hue = default_range[0] 
+        range_sat = default_range[1] 
+        range_val = default_range[2] 
         
-        cam.set_exposure(settings.EXPOSURE)
+        print(cur_thr.__getitem__(2)[0])
+        exposure_error = (val - cur_thr.__getitem__(2)[0])
+        exposure_integral += exposure_error
+        cam.set_exposure(settings.EXPOSURE + exposure_error * settings.EXPOSURE_KP + exposure_integral * settings.EXPOSURE_KI)
         
         final_thr.__setitem__(0, [hue - range_hue, hue + range_hue])
         final_thr.__setitem__(1, [sat - range_sat, sat + range_sat])
@@ -45,8 +48,7 @@ def main():
         pipe = threshold + gbv.find_contours + gbv.FilterContours(
             100) + gbv.contours_to_rotated_rects_sorted + gbv.filter_inner_rotated_rects
         ok, frame = cam.read()
-        #thr.show_frame(threshold(frame))
-        thr.show_frame(settings.MULTIPLE_DUCKS_THRESHOLD(frame))
+        thr.show_frame(threshold(frame))
         raw.show_frame(final_thr(frame))
         cnts = pipe(frame)
         frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
