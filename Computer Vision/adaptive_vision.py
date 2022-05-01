@@ -1,4 +1,3 @@
-from email.mime import base
 import struct
 import cv2
 import gbvision as gbv
@@ -6,11 +5,11 @@ import numpy as np
 import settings as settings
 import socket
 
-default_vals = [19, 231, 75]
+default_vals = [23, 231, 120]
 default_range = [5, 30, 30]
 
 TARGET = settings.MULTIPLE_DUCKS
-final_thr = settings.SINGLE_DUCK_THRSESHOLD
+
 sock = socket.socket
 
 def main():
@@ -23,41 +22,44 @@ def main():
     win = gbv.FeedWindow("window")
     thr = gbv.FeedWindow("threshold")
     raw = gbv.FeedWindow("raw")
-    bbox = None
+    cur_thr = settings.SINGLE_DUCK_THRSESHOLD
+    hue = default_vals[0] 
+    sat = default_vals[1] 
+    val = default_vals[2] 
+    
+    range_hue = default_range[0] 
+    range_sat = default_range[1] 
+    range_val = default_range[2] 
+        
+    hue_integral = 0
     while win.show_frame(frame):
         slight_denoise = gbv.MedianBlur(7)
         frame = slight_denoise(frame)
         
-        # where we adapt
-        cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
-        hue = default_vals[0] 
-        sat = default_vals[1] 
-        val = default_vals[2] 
+        hue_error = (hue - cur_thr.__getitem__(0)[0])
+        hue_integral += hue_error
+        hue += (hue_error * settings.HUE_KP + hue_integral * settings.HUE_KI)
         
-        hue += (hue - cur_thr.__getitem__(0)[0]) * settings.HUE_KP
-        
-        range_hue = default_range[0] 
-        range_sat = default_range[1] 
-        range_val = default_range[2] 
-        
-        print(cur_thr.__getitem__(2)[0])
+
+        #print(cur_thr.__getitem__(2)[0])
         
         # exposure PID
-        exposure_error = (val - cur_thr.__getitem__(2)[0])
+        exposure_error = -(val - cur_thr.__getitem__(2)[0])
         exposure_integral += exposure_error
         exposure_derivative = exposure_error - last_exposure_e
-        exposure += -(exposure_error * settings.EXPOSURE_KP
-                           ) - (exposure_integral * settings.EXPOSURE_KI
-                            ) + (exposure_derivative * settings.EXPOSURE_KD)
+        exposure -= (exposure_error * settings.EXPOSURE_KP
+                           ) + (exposure_integral * settings.EXPOSURE_KI
+                            ) - (exposure_derivative * settings.EXPOSURE_KD)
         print(exposure)
         print(exposure_error)
-        print(exposure_derivative)
+        #print(exposure_derivative)
         cam.set_exposure(exposure)
         last_exposure_e = exposure_error
         
-        final_thr.__setitem__(0, [hue - range_hue, hue + range_hue])
-        final_thr.__setitem__(1, [sat - range_sat, sat + range_sat])
-        final_thr.__setitem__(2, [val - range_val, val + range_val])
+        final_thr = gbv.ColorThreshold([[hue - range_hue, hue + range_hue],
+                                        [sat - range_sat, sat + range_sat],
+                                        [val - range_val, val + range_val]],
+                                       'HSV')
         
         # threshold
         threshold =  final_thr + gbv.Dilate(13, 3
@@ -76,13 +78,23 @@ def main():
             root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
             center = gbv.BaseRotatedRect.shape_center(cnts[0])
             locals = TARGET.location_by_params(cam, root, center)
-            print("distance:" + str(TARGET.distance_by_params(cam, root)))
-            print("location:" + str(locals))
-            print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
+            # print("distance:" + str(TARGET.distance_by_params(cam, root)))
+            # print("location:" + str(locals))
+            # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
             
                 
             bbox = cv2.boundingRect(threshold(frame))
-            print(bbox)
+            #print(bbox)
+            
+        else:
+            bbox = None
+        # where we adapt
+        try:
+            cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
+        finally:
+            pass
+            
+            
             # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
             #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             #     sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
