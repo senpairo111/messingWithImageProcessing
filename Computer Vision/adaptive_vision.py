@@ -5,8 +5,8 @@ import numpy as np
 import settings as settings
 import socket
 
-default_vals = [23, 231, 120]
-default_range = [5, 30, 30]
+default_vals = [23, 231, 80]
+default_range = [5, 30, 20]
 
 TARGET = settings.MULTIPLE_DUCKS
 
@@ -33,12 +33,12 @@ def main():
         
     hue_integral = 0
     while win.show_frame(frame):
-        slight_denoise = gbv.MedianBlur(7)
+        slight_denoise = gbv.MedianBlur(9)
         frame = slight_denoise(frame)
         
-        hue_error = (hue - cur_thr.__getitem__(0)[0])
-        hue_integral += hue_error
-        hue += (hue_error * settings.HUE_KP + hue_integral * settings.HUE_KI)
+        #hue_error = (hue - cur_thr.__getitem__(0)[0])
+        #hue_integral += hue_error
+        #hue += (hue_error * settings.HUE_KP + hue_integral * settings.HUE_KI)
         
 
         #print(cur_thr.__getitem__(2)[0])
@@ -50,7 +50,7 @@ def main():
         exposure -= (exposure_error * settings.EXPOSURE_KP
                            ) + (exposure_integral * settings.EXPOSURE_KI
                             ) - (exposure_derivative * settings.EXPOSURE_KD)
-        print(exposure)
+        #print(exposure)
         print(exposure_error)
         #print(exposure_derivative)
         cam.set_exposure(exposure)
@@ -62,8 +62,8 @@ def main():
                                        'HSV')
         
         # threshold
-        threshold =  final_thr + gbv.Dilate(13, 3
-            )  + gbv.Erode(5, 2) + gbv.DistanceTransformThreshold(0.3)
+        threshold =  final_thr + gbv.Dilate(13, 2
+            )  + gbv.Erode(5, 2) + gbv.DistanceTransformThreshold(0.01)
 
         # pipe
         pipe = threshold + gbv.find_contours + gbv.FilterContours(
@@ -78,9 +78,9 @@ def main():
             root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
             center = gbv.BaseRotatedRect.shape_center(cnts[0])
             locals = TARGET.location_by_params(cam, root, center)
-            # print("distance:" + str(TARGET.distance_by_params(cam, root)))
-            # print("location:" + str(locals))
-            # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
+            print("distance:" + str(TARGET.distance_by_params(cam, root)))
+            print("location:" + str(locals))
+            print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
             
                 
             bbox = cv2.boundingRect(threshold(frame))
