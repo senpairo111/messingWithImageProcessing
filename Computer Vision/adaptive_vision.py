@@ -78,9 +78,9 @@ def main():
             root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
             center = gbv.BaseRotatedRect.shape_center(cnts[0])
             locals = TARGET.location_by_params(cam, root, center)
-            print("distance:" + str(TARGET.distance_by_params(cam, root)))
-            print("location:" + str(locals))
-            print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
+            # print("distance:" + str(TARGET.distance_by_params(cam, root)))
+            # print("location:" + str(locals))
+            # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
             
                 
             bbox = cv2.boundingRect(threshold(frame))
