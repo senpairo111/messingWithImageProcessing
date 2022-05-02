@@ -20,7 +20,7 @@ def main():
     win = gbv.FeedWindow("window")
     thr = gbv.FeedWindow("threshold")
     raw = gbv.FeedWindow("raw")
-    cur_thr = settings.SINGLE_DUCK_THRSESHOLD
+    cur_thr = settings.MAIN_DUCK_THRESHOLD
     hue = default_vals[0] 
     sat = default_vals[1] 
     val = default_vals[2] 
@@ -34,16 +34,21 @@ def main():
     exposure_integral = 0
     
     hue_integral = 0
+    hue_last_e = 0
     
     sat_integral = 0
     sat_last_e = 0
     
     while win.show_frame(frame):
         
-        #hue_error = (hue - cur_thr.__getitem__(0)[0])
-        #hue_integral += hue_error
-        #hue += (hue_error * settings.HUE_KP + hue_integral * settings.HUE_KI)
-        
+        # hue PID
+        hue_error = (hue - cur_thr.__getitem__(0)[0])
+        hue_integral += hue_error
+        hue_derivative = hue_error - hue_last_e
+        hue += (hue_error * settings.HUE_KP
+                ) + (hue_integral * settings.HUE_KI
+                ) + (hue_derivative * settings.HUE_KD)
+        hue_last_e = hue_error
         
         # sat PID
         sat_error = -(sat - cur_thr.__getitem__(1)[0])
@@ -56,7 +61,7 @@ def main():
         print(sat)
         print(sat_error)
         
-        # exposure PID
+        # val PID
         exposure_error = -(val - cur_thr.__getitem__(2)[0])
         exposure_integral += exposure_error
         exposure_derivative = exposure_error - last_exposure_e
@@ -76,13 +81,13 @@ def main():
         final_thr = gbv.ColorThreshold([[hue - range_hue, hue + range_hue],
                                         [sat - range_sat, sat + range_sat],
                                         [val - range_val, val + range_val]],
-                                       'HSV')
+                                       'HSV') or settings.MAIN_DUCK_THRESHOLD
         print(final_thr)
         print(cur_thr)
         
         # threshold
-        threshold = final_thr + gbv.MedianBlur(3) + gbv.Dilate(13, 3
-            ) + gbv.Erode(9, 2) + gbv.DistanceTransformThreshold(0.3)
+        threshold = final_thr + gbv.MedianBlur(5) + gbv.Dilate(13, 3
+            ) + gbv.Erode(9, 3) + gbv.DistanceTransformThreshold(0.3)
 
         # pipe
         pipe = threshold + gbv.find_contours + gbv.FilterContours(
@@ -92,7 +97,7 @@ def main():
         thr.show_frame(threshold(frame))
         raw.show_frame(final_thr(frame))
         cnts = pipe(frame)
-        frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
+        
         if len(cnts) > 0:
             root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
             center = gbv.BaseRotatedRect.shape_center(cnts[0])
@@ -101,17 +106,13 @@ def main():
             # print("location:" + str(locals))
             # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
             
-                
+            # the part where we adapt 
             bbox = cv2.boundingRect(threshold(frame))
-            try:
+            if (ok):
                 cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
-            finally:
-                pass
-            #print(bbox)
-
-        # where we adapt
-        
-            
+            frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
+        else:
+            cur_thr = settings.MAIN_DUCK_THRESHOLD
             
             # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
             #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
