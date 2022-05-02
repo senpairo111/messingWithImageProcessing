@@ -5,8 +5,8 @@ import numpy as np
 import settings as settings
 import socket
 
-default_vals = [23, 231, 80]
-default_range = [5, 30, 20]
+default_vals = settings.default_vals
+default_range = settings.default_range
 
 TARGET = settings.MULTIPLE_DUCKS
 
@@ -15,9 +15,7 @@ sock = socket.socket
 def main():
     cam = gbv.USBCamera(settings.CAMERA_PORT, gbv.LIFECAM_3000) 
     cam.set_exposure(settings.EXPOSURE)
-    exposure = settings.EXPOSURE
-    last_exposure_e = 0
-    exposure_integral = 0
+    
     ok, frame = cam.read()
     win = gbv.FeedWindow("window")
     thr = gbv.FeedWindow("threshold")
@@ -31,39 +29,60 @@ def main():
     range_sat = default_range[1] 
     range_val = default_range[2] 
         
+    exposure = settings.EXPOSURE
+    last_exposure_e = 0
+    exposure_integral = 0
+    
     hue_integral = 0
+    
+    sat_integral = 0
+    sat_last_e = 0
+    
     while win.show_frame(frame):
-        slight_denoise = gbv.MedianBlur(9)
-        frame = slight_denoise(frame)
         
         #hue_error = (hue - cur_thr.__getitem__(0)[0])
         #hue_integral += hue_error
         #hue += (hue_error * settings.HUE_KP + hue_integral * settings.HUE_KI)
         
-
-        #print(cur_thr.__getitem__(2)[0])
+        
+        # sat PID
+        sat_error = -(sat - cur_thr.__getitem__(1)[0])
+        sat_integral += sat_error
+        sat_derivative = sat_last_e - sat_error
+        sat_last_e = sat_error
+        sat += (sat_error * settings.SAT_KP
+                ) + (sat_integral * settings.SAT_KI
+                ) - (sat_derivative * settings.SAT_KD)
+        print(sat)
+        print(sat_error)
         
         # exposure PID
         exposure_error = -(val - cur_thr.__getitem__(2)[0])
         exposure_integral += exposure_error
         exposure_derivative = exposure_error - last_exposure_e
-        exposure -= (exposure_error * settings.EXPOSURE_KP
-                           ) + (exposure_integral * settings.EXPOSURE_KI
-                            ) - (exposure_derivative * settings.EXPOSURE_KD)
+        val += (exposure_error * settings.VAL_KP
+                ) + (exposure_integral * settings.VAL_KI
+                ) - (exposure_derivative * settings.VAL_KD) 
+        # exposure -= (exposure_error * settings.EXPOSURE_KP
+        #                    ) + (exposure_integral * settings.EXPOSURE_KI
+        #                     ) - (exposure_derivative * settings.EXPOSURE_KD)
         #print(exposure)
-        print(exposure_error)
         #print(exposure_derivative)
-        cam.set_exposure(exposure)
+        #cam.set_exposure(exposure)
         last_exposure_e = exposure_error
+        
+        
         
         final_thr = gbv.ColorThreshold([[hue - range_hue, hue + range_hue],
                                         [sat - range_sat, sat + range_sat],
                                         [val - range_val, val + range_val]],
                                        'HSV')
+        print(final_thr)
+        print(cur_thr)
         
         # threshold
-        threshold =  final_thr + gbv.Dilate(13, 2
-            )  + gbv.Erode(5, 2) + gbv.DistanceTransformThreshold(0.01)
+        threshold = final_thr + gbv.MedianBlur(3) + gbv.Dilate(13, 3
+            ) + gbv.Erode(9, 2) + gbv.DistanceTransformThreshold(0.3)
 
         # pipe
         pipe = threshold + gbv.find_contours + gbv.FilterContours(
@@ -84,15 +103,14 @@ def main():
             
                 
             bbox = cv2.boundingRect(threshold(frame))
+            try:
+                cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
+            finally:
+                pass
             #print(bbox)
-            
-        else:
-            bbox = None
+
         # where we adapt
-        try:
-            cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
-        finally:
-            pass
+        
             
             
             # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
