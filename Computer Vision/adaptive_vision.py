@@ -39,6 +39,7 @@ def main():
     sat_integral = 0
     sat_last_e = 0
     
+    
     while win.show_frame(frame):
         
         # hue PID
@@ -111,13 +112,14 @@ def main():
             if (ok):
                 cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
             frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
-        else:
-            cur_thr = settings.MAIN_DUCK_THRESHOLD
-            
             # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
             #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             #     sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
             #         ("255.255.255.255", 5162))
+        else:
+            cur_thr = settings.MAIN_DUCK_THRESHOLD
+            
+            
                 
                 
 

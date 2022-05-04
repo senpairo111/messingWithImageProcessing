@@ -2,7 +2,7 @@ import gbvision as gbv
 CAMERA_PORT = 1
 EXPOSURE = -5
 
-default_vals = [25, 146, 240]
+default_vals = [20, 215, 125]
 default_range = [4, 30, 35]
 
 MAIN_DUCK_THRESHOLD = gbv.ColorThreshold([[default_vals[0] - default_range[0], 
@@ -24,7 +24,7 @@ HUE_KI = 0.0000000001
 HUE_KD = 0.0000002
 
 SAT_KP = 0.02
-SAT_KI = 0.0000001
+SAT_KI = 0.0000003
 SAT_KD = 0.004
 
 VAL_KP = 0.001
