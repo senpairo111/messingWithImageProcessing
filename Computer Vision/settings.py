@@ -2,7 +2,7 @@ import gbvision as gbv
 CAMERA_PORT = 1
 EXPOSURE = -5
 
-default_vals = [20, 215, 125]
+default_vals = [24, 200, 125]
 default_range = [4, 30, 35]
 
 MAIN_DUCK_THRESHOLD = gbv.ColorThreshold([[default_vals[0] - default_range[0], 
@@ -20,15 +20,15 @@ MULTIPLE_DUCKS = gbv.GameObject(0.109544511501)
 SINGLE_DUCK =  gbv.GameObject(0.039633272976)
 
 HUE_KP = 0.0000003
-HUE_KI = 0.0000000001
+HUE_KI = 0.00000000001
 HUE_KD = 0.0000002
 
-SAT_KP = 0.02
-SAT_KI = 0.0000003
-SAT_KD = 0.004
+SAT_KP = 0.01 
+SAT_KI = 0.0000001 
+SAT_KD = 0.007 
 
-VAL_KP = 0.001
-VAL_KI = 0.0000012
+VAL_KP = 0.00078 
+VAL_KI = 0.000002 
 VAL_KD = 0.0989
 
 RANGE_HUE_KP = 0

@@ -107,11 +107,14 @@ def main():
             # print("location:" + str(locals))
             # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
             
-            # the part where we adapt 
-            bbox = cv2.boundingRect(threshold(frame))
+            # the part where we choose the next thr
+            bbox_pipe = threshold + gbv.find_contours + gbv.FilterContours(100
+                            ) + gbv.contours_to_rects_sorted + gbv.filter_inner_rects
+            bbox = bbox_pipe(frame)[0]
             if (ok):
-                cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV')
+                cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV') 
             frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
+            frame = gbv.draw_rects(frame, [bbox], (0, 0, 255), thickness=5)
             # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
             #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             #     sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
