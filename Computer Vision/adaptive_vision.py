@@ -1,5 +1,6 @@
 from statistics import median
 import struct
+from typing import final
 import cv2
 from cv2 import medianBlur
 import gbvision as gbv
@@ -101,32 +102,34 @@ def main():
         raw.show_frame(final_thr(frame))
         cnts = pipe(frame)
         
-        try:
-            if len(cnts) > 0:
-                root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
-                center = gbv.BaseRotatedRect.shape_center(cnts[0])
-                locals = TARGET.location_by_params(cam, root, center)
-                # print("distance:" + str(TARGET.distance_by_params(cam, root)))
-                # print("location:" + str(locals))
-                # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
-
-                # the part where we choose the next thr
-                bbox_pipe = threshold + gbv.MedianBlur(9) + gbv.Erode(9, 2
-                            ) + gbv.find_contours + gbv.FilterContours(100
-                            ) + gbv.contours_to_rects_sorted + gbv.filter_inner_rects
+    
+        if len(cnts) > 0:
+            root = gbv.BaseRotatedRect.shape_root_area(cnts[0])
+            center = gbv.BaseRotatedRect.shape_center(cnts[0])
+            locals = TARGET.location_by_params(cam, root, center)
+            # print("distance:" + str(TARGET.distance_by_params(cam, root)))
+            # print("location:" + str(locals))
+            # print("angle:" + str(np.arcsin(locals[0] / locals[2]) * 180 / np.pi))
+            # the part where we choose the next thr
+            bbox_pipe = threshold + gbv.MedianBlur(9) + gbv.Erode(9, 2
+                        ) + gbv.find_contours + gbv.FilterContours(100
+                        ) + gbv.contours_to_rects_sorted + gbv.filter_inner_rects
+            try:
                 bbox = bbox_pipe(frame)[0]
-                if (ok):
-                    cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV') 
-                frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
-                frame = gbv.draw_rects(frame, [bbox], (0, 0, 255), thickness=5)
-                # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
-                #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-                #     sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
-                #         ("255.255.255.255", 5162))
-            else:
-                cur_thr = settings.MAIN_DUCK_THRESHOLD
-        finally:
-            pass
+            except:
+                bbox_pipe = threshold + gbv.find_contours + gbv.FilterContours(100
+                        ) + gbv.contours_to_rects_sorted + gbv.filter_inner_rects
+                bbox = bbox_pipe(frame)[0]
+            if (ok):
+                cur_thr = gbv.median_threshold(frame, [0, 0, 0], bbox, 'HSV') 
+            frame = gbv.draw_rotated_rects(frame, cnts, (255, 0, 0), thickness=5)
+            frame = gbv.draw_rects(frame, [bbox], (0, 0, 255), thickness=5)
+            # with socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP) as sock:
+            #     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            #     sock.sendto(struct.pack('ddd', locals[0], locals[1], locals[2]),
+            #         ("255.255.255.255", 5162))
+        else:
+            cur_thr = settings.MAIN_DUCK_THRESHOLD
 
 
 
