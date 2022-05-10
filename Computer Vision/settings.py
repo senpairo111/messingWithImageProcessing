@@ -1,6 +1,6 @@
 import gbvision as gbv
 CAMERA_PORT = 1
-EXPOSURE = -5
+EXPOSURE = -7
 
 default_vals = [26, 190, 170]
 default_range = [5, 35, 40]
@@ -23,8 +23,8 @@ HUE_KP = 0.0000003
 HUE_KI = 0.00000000001
 HUE_KD = 0.000004
 
-SAT_KP = 0.011
-SAT_KI = 0.0000002 
+SAT_KP = 0.014
+SAT_KI = 0.0000001
 SAT_KD = 0.007 
 
 VAL_KP = 0.0091
