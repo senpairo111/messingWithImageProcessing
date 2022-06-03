@@ -5,6 +5,9 @@ import settings as settings
 stdv = np.array([0, 0, 0])
 
 
+# basically this whole piece of code is here to write the HSV values to thr.txt
+
+
 def main():
     camera = gbv.USBCamera(settings.CAMERA_PORT)
     camera.set_exposure(settings.EXPOSURE)
@@ -20,8 +23,11 @@ def main():
             thr = gbv.median_threshold(frame, stdv, bbox, 'HSV')
             break
     cv2.destroyAllWindows()
-    print(bbox)
-    print(thr)
+    
+    with open('thr.txt', 'w') as f:
+        f.write('{}\n{}\n{}'.format(thr.__getitem__(0)[0],
+                                    thr.__getitem__(1)[0],
+                                    thr.__getitem__(2)[0]))
 
     original = gbv.FeedWindow(window_name='original')
     after_proc = gbv.FeedWindow(window_name='after threshold', drawing_pipeline=thr)
